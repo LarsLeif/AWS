@@ -1,0 +1,117 @@
+Create LAMP stack using the given CFN template. Check on resources to confirm needed infrastructure. 
+
+Install Wordpress and create a sample post with an image. 
+
+Use the given commands to transfer data from existing LAMB stack server to a dedicated Maria DB server. 
+
+# use this command to get a snapshot of the existing maria db data
+mysqldump -u root -p sprintqa > wordpressServer.sql
+
+# use this command to remotely connect to private ip of dedicated maria db and send snapshot we persisted in the original wordpress db
+mysql -h PrivateIP -u sprintqa -p sprintqa < wordpressServer.sql
+
+
+Now, edit wordpress config to make it point to the new db. 
+cd /var/www/html
+vim wp-config.php	>	replace localhost for DB_HOST to private IP of dedicate MariaDB server
+:wq!
+
+Now, confirm Wordpress website is working by refreshing. 
+
+Shut down Wordpress server MariaDB service to make sure that your website is still functioning since it is now connected to the dedicated MariaDB server. 
+systemctl status mariadb
+systemctl stop mariadb 
+
+Part 2: migrate from dedicated MariaDB to AWS RDS
+
+1. Create subnet group in the vpc created by cfn and select us-east-1a/b/c AZs.
+ 	Then select DB subnets for all 3 AZs
+ 	Create 
+2. Create rds with free tier and mysql 5.7.31, for rds vpc connectivity select created vpc and subnet group. Select private option for access,
+3. Make sure your rds sg has inbound rule from mariaDB instance sg. 
+4. Run commands from part 1 to export .sql file to rds and confirm. 
+
+
+Part 3: 
+Create RDS with public access.
+Install mysql shell/workbench.
+Connect using cmd/terminal.
+mysqlsh --user=admin --port=3306 --host sprintqa.cuxcykvkr47m.us-east-1.rds.amazonaws.com  
+\sql
+use sprintqa (dbname)
+create table items (item_id int(11) unsigned NOT NULL AUTO_INCREMENT, name varchar(100) DEFAULT NULL, PRIMARY KEY (item_id)) ;
+select * from items;
+insert into items values('4545','Laptop');
+select * from items;
+install npm with chocolatey from nodejs.org in gitbash
+create rds folder and run: npm init , give it a name
+npm install mysql
+in the rds folder, vim config.json
+{
+"dbhost" : "dfsfsfsfs.us-east-1.rds.amazonaws.com",
+"dbuser" : "admin",
+"dbpassword" : "dsfsf",
+"dbname" : "sdfsfs"
+}
+ in the same rds folder, vim local.js
+
+
+var mysql = require('mysql');
+var config = require('./config.json');
+
+var pool = mysql.createPool({
+  host : config.dbhost,
+  user : config.dbuser,
+  password : config.dbpassword,
+  database : config.dbname
+});
+
+pool.getConnection(function(err,connection) {
+  console.log(err);
+  console.log(connection);
+});
+
+node local.js to run local js file to connect to db. ctrl+c to stop
+
+add the given code to local.js after console.log(connection)
+connection.query('select * from items;', function(error, results, fields) {
+    connection.release();
+    if (error) { console.log(error); }
+    else { console.log(results); }
+  });
+
+node local.js
+rename local.js as main.js : mv local.js main.js
+
+var mysql = require('mysql');
+var config = require('./config.json');
+
+var pool = mysql.createPool({
+  host : config.dbhost,
+  user : config.dbuser,
+  password : config.dbpassword,
+  database : config.dbname
+});
+
+
+Lambda Function:
+
+exports.handler = (event, context, callback) => {
+  context.callbackWaitsForEmptyEventLoop=false;
+  pool.getConnection(function(err,connection) {
+    if (err) { callback(err); return; }
+    console.log(err);
+    console.log(connection);
+    connection.query('select * from items;', function(error, results, fields) {
+      connection.release();
+      if (error) { console.log(error); callback(error); return; }
+      else { console.log(results); callback(null, results[0].name); }
+    });
+});
+}
+
+zip all folder contents.
+Now, go to lambda
+create nodejs app from scratch.
+upload zip file and change index.handler to main.handler
+open sg on rds to 0.0.0.0/0 for lambda testing

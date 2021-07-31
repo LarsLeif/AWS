@@ -1,3 +1,4 @@
+
 Description:  Automation of 2 EC2 creations in us-east-1
 Parameters:
   amiId:
@@ -60,3 +61,5 @@ Resources:
           FromPort: '22'
           ToPort: '22'
           CidrIp: '10.0.0.0/16'
+
+  

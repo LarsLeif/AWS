@@ -59,8 +59,9 @@ Resources:
             yum install -y httpd
             systemctl start httpd
             systemctl enable httpd
-            touch /var/www/html/index.html
-            echo "hello world from server 2" >> /var/www/html/index.html 
+            mkdir /var/www/html/hello
+            touch /var/www/html/hello/index.html
+            echo "hello world from server 2" >> /var/www/html/hello/index.html 
       Tags:
         - Key: Name
           Value: Server2
@@ -74,7 +75,7 @@ Resources:
       VpcId: !Ref vpcID
       GroupDescription: SSH access for IPv4 and IPv6 
       SecurityGroupIngress:
-        - Description: 'Inbound IPv4 SSH traffic'
+        - Description: 'Inbound IPv4 SSH traffic.'
           IpProtocol: tcp
           FromPort: '22'
           ToPort: '22'

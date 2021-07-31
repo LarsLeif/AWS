@@ -146,3 +146,4 @@ Resources:
         Ref: ApplicationLoadBalancer
       Port: 80
       Protocol: HTTP
+    
